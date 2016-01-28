@@ -7,7 +7,6 @@
 aa_1=1
 aa_2=2
 visit: get_value('a.aa_1')
-@author gulijing@baidu.com
 ''' 
 import sys
 import os
