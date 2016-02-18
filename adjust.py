@@ -8,6 +8,10 @@ sys.setdefaultencoding('utf-8')
 
 from parse_conf import *
 
+#分割的请求数
+RATIO_PROVIDER = 100
+RATIO_OTHER = 10
+
 def load_conf(catg, conf):
     confHandler = INI_Conf(conf)
     catgConf = confHandler.get_values(catg)
@@ -21,7 +25,11 @@ def load_conf(catg, conf):
     #ratio做按百分比计算
     su = sum(ratioTemp)
     for eachRatio in ratioTemp:
-        temp = eachRatio * 10 / su
+        if "provider" == catg:
+            temp = eachRatio * RATIO_PROVIDER / su
+        else:
+            temp = eachRatio * RATIO_OTHER / su
+
         ratio.append(int(temp))
 
     return {catg: ratioKey}, {catg: ratio}
@@ -41,7 +49,8 @@ def split_by_catg(catgKeys, oriReqSet):
     index = 0
     lineTemp = ''
     parseFlag = True
-    while True:
+
+    while True and catg != "provider":
         line = reqHandler.readline().strip()
         if not line:
             break
@@ -77,6 +86,30 @@ def split_by_catg(catgKeys, oriReqSet):
         lineTemp = ''
         index += 1
         parseFlag = True
+
+    #add by provider, special process  begin
+    providerFlag = ""
+    while True and "provider" == catg:
+        line = reqHandler.readline().strip()
+        if not line:
+            break
+
+        if 0 == index % 2:
+            lineArr = line.split("\t")
+            provider = lineArr[0]
+            if provider in catgKeys[catg]:
+                providerFlag = provider
+                catgSplitHandler[provider].write(line + "\n")                
+
+            index += 1
+            continue
+
+        if "" != providerFlag:
+            catgSplitHandler[providerFlag].write(line + "\n")
+
+        index += 1
+        providerFlag = ""
+    #end
 
     reqHandler.close()
     for catgKey in catgKeys[catg]:
